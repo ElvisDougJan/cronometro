@@ -1,0 +1,13 @@
+{
+  "name": "teste",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon ./index.js"
+  },
+  "dependencies": {
+    "moment": "^2.24.0",
+    "nodemon": "^1.19.2"
+  }
+}
