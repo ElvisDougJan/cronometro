@@ -1,5 +1,7 @@
 const moment = require('moment')
-const horaSalva = '05:13:20'
+const horaSalva = '02:05:00'
+
+let difSegundos = 0
 
 let segundoContado = 0
 let minutoContado = 0
@@ -14,12 +16,19 @@ function calculaHoras(dataInicial, pausado, dataAtual) {
 }
 
 function calculaMinutos(dataInicial, pausado, dataAtual) {
+  let segundosDataInial = (60 - new Date(dataInicial).getSeconds())
+
   let diferenca = (new Date(dataAtual).getTime() - new Date(dataInicial).getTime()) / 1000
+
+  let segundosParaSubtrair = segundosDataInial + (60 - difSegundos)
+
+  diferenca += segundosParaSubtrair
   diferenca /= 60
+
   let minutos = parseInt(diferenca)
   minutos -= (60 * calculaHoras(dataInicial, pausado, dataAtual))
   minutos = minutos < 10 ? String("0" + minutos) : String(minutos)
-  return minutos
+  return minutos - 2
 }
 
 function calculaSegundos(dataInicial, pausado, dataAtual) {
@@ -33,9 +42,9 @@ function contaSegundos(segundos) {
   let segInt = parseInt(segundos)
   let segSalvo = parseInt(horaSalva.substring(6, 8))
 
-  let diferenca = parseInt(String(segSalvo).replace('-', ''))
+  difSegundos = parseInt(String(segSalvo).replace('-', ''))
 
-  return segInt += diferenca
+  return segInt += difSegundos
 }
 
 function contaMinutos(minutos) {
@@ -54,7 +63,7 @@ function contaHoras(hora) {
 
   if (horaInt > 0) {
     horSalva -= 24
-    resultado = horaInt + parseInt(String(horSalva).replace('-', '')) + 3
+    resultado = horaInt + parseInt(String(horSalva).replace('-', ''))
   }
 
   return resultado
@@ -90,9 +99,9 @@ exports.cronometro = (dataInicial, pausado) => {
 
   dataAtual = new Date(dataAtual)
 
-  let hora = calculaHoras(dataInicial, pausado, dataAtual)
-  let minutos = calculaMinutos(dataInicial, pausado, dataAtual)
   let sec = calculaSegundos(dataInicial, pausado, dataAtual)
+  let minutos = calculaMinutos(dataInicial, pausado, dataAtual)
+  let hora = calculaHoras(dataInicial, pausado, dataAtual)
 
   return !pausado
     ? somaHoras(hora, minutos, sec)
