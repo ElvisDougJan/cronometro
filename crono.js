@@ -1,8 +1,6 @@
-const moment = require('moment')
-const horaSalva = '02:05:00'
-
+let horaSalva = '00:00:00'
+let horaEstimada = '00:00:00'
 let difSegundos = 0
-
 let segundoContado = 0
 let minutoContado = 0
 let horaContada = 0
@@ -16,26 +14,31 @@ function calculaHoras(dataInicial, pausado, dataAtual) {
 }
 
 function calculaMinutos(dataInicial, pausado, dataAtual) {
-  let segundosDataInial = (60 - new Date(dataInicial).getSeconds())
+  let segundosParaAdicionar = parseInt(horaSalva.substring(6, 8))
 
   let diferenca = (new Date(dataAtual).getTime() - new Date(dataInicial).getTime()) / 1000
 
-  let segundosParaSubtrair = segundosDataInial + (60 - difSegundos)
+  diferenca += segundosParaAdicionar
 
-  diferenca += segundosParaSubtrair
   diferenca /= 60
 
   let minutos = parseInt(diferenca)
   minutos -= (60 * calculaHoras(dataInicial, pausado, dataAtual))
   minutos = minutos < 10 ? String("0" + minutos) : String(minutos)
-  return minutos - 2
+  return minutos
 }
 
 function calculaSegundos(dataInicial, pausado, dataAtual) {
-  let sec = new Date().getSeconds()
-  sec = sec < 10 ? String("0" + sec) : String(sec)
-  if (pausado) sec = "00"
-  return sec
+  let segundoInicial = new Date(dataInicial).getSeconds()
+  let segundoAtual = new Date(dataAtual).getSeconds()
+
+  if (segundoAtual < segundoInicial) segundoAtual += 60
+
+  let segundo = (segundoAtual - segundoInicial)
+
+  segundo = segundo < 10 ? String("0" + segundo) : String(segundo)
+  if (pausado) segundo = "00"
+  return segundo
 }
 
 function contaSegundos(segundos) {
@@ -94,16 +97,50 @@ function somaHoras(hora, minutos, segundos) {
   return `${horaContada}:${minutoContado}:${segundoContado}`
 }
 
-exports.cronometro = (dataInicial, pausado) => {
-  let dataAtual = moment().format('YYYY-MM-DD HH:mm:ss')
+function porcentagemHoras(dataInicial, cronometro) {
+  let hora = parseInt(cronometro.substring(0, 2))
+  let minutos = parseInt(cronometro.substring(3, 5))
+  let segundos = parseInt(cronometro.substring(6, 8))
 
-  dataAtual = new Date(dataAtual)
+  let hEstimada = parseInt(horaEstimada.substring(0, 2))
+  let mEstimado = parseInt(horaEstimada.substring(3, 5))
+  let sEstimado = parseInt(horaEstimada.substring(6, 8))
 
-  let sec = calculaSegundos(dataInicial, pausado, dataAtual)
-  let minutos = calculaMinutos(dataInicial, pausado, dataAtual)
-  let hora = calculaHoras(dataInicial, pausado, dataAtual)
+  // Foi adicionado 21 nas horas por conta do fuso horário que é de -3
+  let segundosAtuais = new Date(1970, 0, 0, (hora + 21), minutos, segundos, 0).getTime() / 1000
+  let segundosEstimados = new Date(1970, 0, 0, (hEstimada + 21), mEstimado, sEstimado, 0).getTime() / 1000
 
-  return !pausado
-    ? somaHoras(hora, minutos, sec)
-    : horaSalva
+  let resultado = parseInt((segundosAtuais * 100) / segundosEstimados)
+
+  return resultado
 }
+
+exports.cronometro = (dataInicial, pausado, tempoCronometro, tempoEstimadaParam) => {
+  if (dataInicial === undefined && pausado === undefined && tempoCronometro === undefined && tempoEstimadaParam === undefined) {
+    dataInicial = new Date().toISOString()
+    pausado = true
+    tempoCronometro = '00:00:00'
+    tempoEstimadaParam = '00:00:00'
+  }
+
+  horaSalva = tempoCronometro
+
+  horaEstimada = tempoEstimadaParam
+
+  let dataAtual = new Date().toISOString()
+
+  if (!pausado) {
+    let segundos = calculaSegundos(dataInicial, pausado, dataAtual)
+    let minutos = calculaMinutos(dataInicial, pausado, dataAtual)
+    let hora = calculaHoras(dataInicial, pausado, dataAtual)
+    let cronometro = somaHoras(hora, minutos, segundos)
+    let porcentagem = porcentagemHoras(dataInicial, cronometro)
+    return {
+      cronometro,
+      porcentagem
+    }
+  } else {
+    return horaSalva
+  }
+}
+
